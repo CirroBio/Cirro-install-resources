@@ -56,8 +56,8 @@ Resources:
               - sns:*
               - sqs:*
             Resource:
-              - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${pEnvironmentPrefix}*'
-              - !Sub 'arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${pEnvironmentPrefix}*'
+              - !Sub 'arn:aws:sns:*:${AWS::AccountId}:${pEnvironmentPrefix}*'
+              - !Sub 'arn:aws:sqs:*:${AWS::AccountId}:${pEnvironmentPrefix}*'
 
           - Sid: PermissionsBoundaryBatch
             Effect: Allow
@@ -79,11 +79,11 @@ Resources:
             Action:
               - logs:*
             Resource:
-              - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/batch/job:*'
-              - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/omics/WorkflowLog:*'
-              - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/sagemaker/NotebookInstances:*'
-              - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${pEnvironmentPrefix}*'
-              - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/${pEnvironmentPrefix}/*'
+              - !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/batch/job:*'
+              - !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/omics/WorkflowLog:*'
+              - !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/sagemaker/NotebookInstances:*'
+              - !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/lambda/${pEnvironmentPrefix}*'
+              - !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:/${pEnvironmentPrefix}/*'
 
           # Allow complete access to the Cirro project bucket
           - Sid: PermissionsBoundaryProjectS3Access
@@ -92,6 +92,7 @@ Resources:
               - s3:*
             Resource:
               - 'arn:aws:s3:::project-*'
+              - !Sub 'arn:aws:s3:*:${AWS::AccountId}:accesspoint/cirro-*'
 
           # Respect cross account access granted through bucket policy
           - Sid: PermissionsBoundaryS3AccessNotInAccount
@@ -196,8 +197,8 @@ Resources:
             Action:
               - lambda:*
             Resource:
-              - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${pEnvironmentPrefix}*'
-              - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:event-source-mapping:*'
+              - !Sub 'arn:aws:lambda:*:${AWS::AccountId}:function:${pEnvironmentPrefix}*'
+              - !Sub 'arn:aws:lambda:*:${AWS::AccountId}:event-source-mapping:*'
 
           - Sid: PermissionsBoundaryLambdaEventMapping
             Effect: Allow
@@ -206,7 +207,7 @@ Resources:
             Resource: "*"
             Condition:
               StringLike:
-                "lambda:FunctionArn": !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${pEnvironmentPrefix}*"
+                "lambda:FunctionArn": !Sub "arn:aws:lambda:*:${AWS::AccountId}:function:${pEnvironmentPrefix}*"
 
           - Sid: PermissionsBoundaryProjectLambdaLayerAccess
             Effect: Allow
@@ -223,7 +224,7 @@ Resources:
             Resource:
               - !Sub 'arn:aws:events:*:${pDataPortalAccountId}:event-bus/*'
               - !Sub 'arn:aws:execute-api:*:${pDataPortalAccountId}:*/*'
-              - !Sub 'arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/${pEnvironmentPrefix}*'
+              - !Sub 'arn:aws:events:*:${AWS::AccountId}:rule/${pEnvironmentPrefix}*'
 
           # Save SSM params under Cirro prefix
           - Sid: PermissionsBoundaryProjectCfnOutputsSSMParameters
@@ -231,7 +232,7 @@ Resources:
             Action:
               - ssm:*
             Resource:
-              - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pEnvironmentPrefix}/*'
+              - !Sub 'arn:aws:ssm:*:${AWS::AccountId}:parameter/${pEnvironmentPrefix}/*'
 
           # Allow Cirro cloudformation stack management
           - Sid: PermissionsBoundaryProjectCfnStackPermissions
@@ -244,8 +245,8 @@ Resources:
               - cloudformation:TagResource
               - cloudformation:UntagResource
             Resource:
-              - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${pEnvironmentPrefix}*/*'
-              - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:changeSet/${pEnvironmentPrefix}*/*'
+              - !Sub 'arn:aws:cloudformation:*:${AWS::AccountId}:stack/${pEnvironmentPrefix}*/*'
+              - !Sub 'arn:aws:cloudformation:*:${AWS::AccountId}:changeSet/${pEnvironmentPrefix}*/*'
 
           # Allow full control over project secrets
           - Sid: PermissionsBoundarySecretsManager
@@ -253,7 +254,7 @@ Resources:
             Action:
               - secretsmanager:*
             Resource:
-              - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${pEnvironmentPrefix}/*'
+              - !Sub 'arn:aws:secretsmanager:*:${AWS::AccountId}:secret:${pEnvironmentPrefix}/*'
 
           # Allow various metrics access, billing/storage
           - Sid: PermissionsBoundaryMetrics
@@ -330,7 +331,7 @@ Resources:
               - sns:UntagResource
               - sns:ListTagsForResource
             Resource:
-              - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${pEnvironmentPrefix}*'
+              - !Sub 'arn:aws:sns:*:${AWS::AccountId}:${pEnvironmentPrefix}*'
 
           - Sid: DatasetFileUploadedSqsPermissions
             Effect: Allow
@@ -346,7 +347,7 @@ Resources:
               - sqs:UntagQueue
               - sqs:ListQueueTags
             Resource:
-              - !Sub 'arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${pEnvironmentPrefix}*'
+              - !Sub 'arn:aws:sqs:*:${AWS::AccountId}:${pEnvironmentPrefix}*'
 
           - Sid: ProjectBatchTemplateDeploy
             Effect: Allow
@@ -399,9 +400,9 @@ Resources:
               - logs:ListTagsForResource
               - logs:UntagResource
             Resource:
-              - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/sagemaker/NotebookInstances*'
-              - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${pEnvironmentPrefix}*'
-              - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/${pEnvironmentPrefix}/*'
+              - !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/sagemaker/NotebookInstances*'
+              - !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/lambda/${pEnvironmentPrefix}*'
+              - !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:/${pEnvironmentPrefix}/*'
 
           - Sid: ProjectS3TemplateDeploy
             Effect: Allow
@@ -522,7 +523,7 @@ Resources:
               - lambda:*Resource
               - lambda:*FunctionConcurrency
             Resource:
-              - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${pEnvironmentPrefix}*'
+              - !Sub 'arn:aws:lambda:*:${AWS::AccountId}:function:${pEnvironmentPrefix}*'
 
           - Sid: LambdaEventMapping
             Effect: Allow
@@ -550,7 +551,7 @@ Resources:
               - events:TagResource
               - events:UntagResource
             Resource:
-              - !Sub 'arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/${pEnvironmentPrefix}*'
+              - !Sub 'arn:aws:events:*:${AWS::AccountId}:rule/${pEnvironmentPrefix}*'
 
           - Sid: ProjectCfnOutputsSSMParameters
             Effect: Allow
@@ -562,7 +563,7 @@ Resources:
               - ssm:ListTagsForResource
               - ssm:GetParameters
             Resource:
-              - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pEnvironmentPrefix}/*'
+              - !Sub 'arn:aws:ssm:*:${AWS::AccountId}:parameter/${pEnvironmentPrefix}/*'
 
           - Sid: ProjectCfnStackPermissions
             Effect: Allow
@@ -582,8 +583,8 @@ Resources:
               - cloudformation:TagResource
               - cloudformation:UntagResource
             Resource:
-              - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${pEnvironmentPrefix}*/*'
-              - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:changeSet/${pEnvironmentPrefix}*/*'
+              - !Sub 'arn:aws:cloudformation:*:${AWS::AccountId}:stack/${pEnvironmentPrefix}*/*'
+              - !Sub 'arn:aws:cloudformation:*:${AWS::AccountId}:changeSet/${pEnvironmentPrefix}*/*'
 
           - Sid: ResourceGroupTagging
             Effect: Allow
