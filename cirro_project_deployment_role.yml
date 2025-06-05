@@ -92,7 +92,7 @@ Resources:
               - s3:*
             Resource:
               - 'arn:aws:s3:::project-*'
-              - !Sub 'arn:aws:s3:*:${AWS::AccountId}:accesspoint/cirro-*'
+              - !Sub 'arn:aws:s3:*:*:accesspoint/cirro-*'
 
           # Respect cross account access granted through bucket policy
           - Sid: PermissionsBoundaryS3AccessNotInAccount
