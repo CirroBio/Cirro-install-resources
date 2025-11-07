@@ -48,7 +48,7 @@ Resources:
               - budgets:ModifyBudget
               - budgets:*Resource
             Resource:
-              - !Sub "arn:aws:budgets::${AWS::AccountId}:budget/${pEnvironmentPrefix}*"
+              - !Sub "arn:${AWS::Partition}:budgets::${AWS::AccountId}:budget/${pEnvironmentPrefix}*"
 
           - Sid: PermissionsBoundarySnsSqsPermissions
             Effect: Allow
@@ -56,8 +56,8 @@ Resources:
               - sns:*
               - sqs:*
             Resource:
-              - !Sub 'arn:aws:sns:*:${AWS::AccountId}:${pEnvironmentPrefix}*'
-              - !Sub 'arn:aws:sqs:*:${AWS::AccountId}:${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:sns:*:${AWS::AccountId}:${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:sqs:*:${AWS::AccountId}:${pEnvironmentPrefix}*'
 
           - Sid: PermissionsBoundaryBatch
             Effect: Allow
@@ -65,6 +65,7 @@ Resources:
               - batch:*
               - ec2:*
               - ecs:*
+              - autoscaling:*
               - cloudwatch:PutMetricData
               - ecr:*
               - ssm:*
@@ -79,11 +80,11 @@ Resources:
             Action:
               - logs:*
             Resource:
-              - !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/batch/job:*'
-              - !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/omics/WorkflowLog:*'
-              - !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/sagemaker/NotebookInstances:*'
-              - !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/lambda/${pEnvironmentPrefix}*'
-              - !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:/${pEnvironmentPrefix}/*'
+              - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/aws/batch/job:*'
+              - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/aws/omics/WorkflowLog:*'
+              - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/aws/sagemaker/NotebookInstances:*'
+              - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/aws/lambda/${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/${pEnvironmentPrefix}/*'
 
           # Allow complete access to the Cirro project bucket
           - Sid: PermissionsBoundaryProjectS3Access
@@ -91,8 +92,8 @@ Resources:
             Action:
               - s3:*
             Resource:
-              - 'arn:aws:s3:::project-*'
-              - !Sub 'arn:aws:s3:*:*:accesspoint/cirro-*'
+              - !Sub 'arn:${AWS::Partition}:s3:::project-*'
+              - !Sub 'arn:${AWS::Partition}:s3:*:*:accesspoint/cirro-*'
 
           # Respect cross account access granted through bucket policy
           - Sid: PermissionsBoundaryS3AccessNotInAccount
@@ -103,7 +104,7 @@ Resources:
               - s3:ListBucket
               - s3:GetBucketLocation
             Resource:
-              - 'arn:aws:s3:::*'
+              - !Sub 'arn:${AWS::Partition}:s3:::*'
             Condition:
               StringNotEquals:
                 aws:ResourceAccount:
@@ -118,7 +119,7 @@ Resources:
             Condition:
               StringEquals:
                 iam:PermissionsBoundary:
-                  - !Sub 'arn:aws:iam::${AWS::AccountId}:policy/${pPermissionsBoundaryName}'
+                  - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/${pPermissionsBoundaryName}'
 
           - Sid: DenyPolicyChange
             Effect: Deny
@@ -128,7 +129,7 @@ Resources:
               - iam:DetachRolePolicy
               - iam:SetDefaultPolicyVersion
             Resource:
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:policy/${pPermissionsBoundaryName}'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/${pPermissionsBoundaryName}'
 
           # Must create the role with this permission boundary
           - Sid: EnforcePermissionBoundary
@@ -139,7 +140,7 @@ Resources:
             Condition:
               StringNotEquals:
                 iam:PermissionsBoundary:
-                  - !Sub 'arn:aws:iam::${AWS::AccountId}:policy/${pPermissionsBoundaryName}'
+                  - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/${pPermissionsBoundaryName}'
 
           # Allow Cirro to create IAM roles used in various actions
           - Sid: PermissionsBoundaryProjectIamRolePermissions
@@ -147,8 +148,9 @@ Resources:
             Action:
               - iam:*
             Resource:
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/${pEnvironmentPrefix}*'
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:instance-profile/${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:instance-profile/${pEnvironmentPrefix}*'
 
           # Create SLRs used in resources
           - Sid: PermissionsBoundaryIAMServiceRoleCreationPermissions
@@ -156,11 +158,11 @@ Resources:
             Action:
               - iam:CreateServiceLinkedRole
             Resource:
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.amazonaws.com/*'
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/aws-service-role/spot.amazonaws.com/*'
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/aws-service-role/batch.amazonaws.com/*'
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/aws-service-role/autoscaling.amazonaws.com/*'
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/aws-service-role/servicequotas.amazonaws.com/*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/ecs.amazonaws.com/*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/spot.amazonaws.com/*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/batch.amazonaws.com/*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/autoscaling.amazonaws.com/*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/servicequotas.amazonaws.com/*'
 
           # This is project level account automation (it is optional for BYOA)
           - Sid: PermissionsBoundaryProjectAutomationAccountLevelPermissions
@@ -182,8 +184,8 @@ Resources:
              - kms:*
             Resource: '*'
             Condition:
-             ForAnyValue:StringLike:
-               kms:ResourceAliases: 'alias/project-*'
+              ForAnyValue:StringLike:
+                kms:ResourceAliases: 'alias/project-*'
 
           - Sid: PermissionsBoundaryProjectSagemakerAccess
             Effect: Allow
@@ -197,8 +199,8 @@ Resources:
             Action:
               - lambda:*
             Resource:
-              - !Sub 'arn:aws:lambda:*:${AWS::AccountId}:function:${pEnvironmentPrefix}*'
-              - !Sub 'arn:aws:lambda:*:${AWS::AccountId}:event-source-mapping:*'
+              - !Sub 'arn:${AWS::Partition}:lambda:*:${AWS::AccountId}:function:${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:lambda:*:${AWS::AccountId}:event-source-mapping:*'
 
           - Sid: PermissionsBoundaryLambdaEventMapping
             Effect: Allow
@@ -207,7 +209,7 @@ Resources:
             Resource: "*"
             Condition:
               StringLike:
-                "lambda:FunctionArn": !Sub "arn:aws:lambda:*:${AWS::AccountId}:function:${pEnvironmentPrefix}*"
+                lambda:FunctionArn: !Sub "arn:${AWS::Partition}:lambda:*:${AWS::AccountId}:function:${pEnvironmentPrefix}*"
 
           - Sid: PermissionsBoundaryProjectLambdaLayerAccess
             Effect: Allow
@@ -222,9 +224,9 @@ Resources:
               - events:*
               - execute-api:Invoke
             Resource:
-              - !Sub 'arn:aws:events:*:${pDataPortalAccountId}:event-bus/*'
-              - !Sub 'arn:aws:execute-api:*:${pDataPortalAccountId}:*/*'
-              - !Sub 'arn:aws:events:*:${AWS::AccountId}:rule/${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:events:*:${pDataPortalAccountId}:event-bus/*'
+              - !Sub 'arn:${AWS::Partition}:execute-api:*:${pDataPortalAccountId}:*/*'
+              - !Sub 'arn:${AWS::Partition}:events:*:${AWS::AccountId}:rule/${pEnvironmentPrefix}*'
 
           # Save SSM params under Cirro prefix
           - Sid: PermissionsBoundaryProjectCfnOutputsSSMParameters
@@ -232,7 +234,7 @@ Resources:
             Action:
               - ssm:*
             Resource:
-              - !Sub 'arn:aws:ssm:*:${AWS::AccountId}:parameter/${pEnvironmentPrefix}/*'
+              - !Sub 'arn:${AWS::Partition}:ssm:*:${AWS::AccountId}:parameter/${pEnvironmentPrefix}/*'
 
           # Allow Cirro cloudformation stack management
           - Sid: PermissionsBoundaryProjectCfnStackPermissions
@@ -245,8 +247,8 @@ Resources:
               - cloudformation:TagResource
               - cloudformation:UntagResource
             Resource:
-              - !Sub 'arn:aws:cloudformation:*:${AWS::AccountId}:stack/${pEnvironmentPrefix}*/*'
-              - !Sub 'arn:aws:cloudformation:*:${AWS::AccountId}:changeSet/${pEnvironmentPrefix}*/*'
+              - !Sub 'arn:${AWS::Partition}:cloudformation:*:${AWS::AccountId}:stack/${pEnvironmentPrefix}*/*'
+              - !Sub 'arn:${AWS::Partition}:cloudformation:*:${AWS::AccountId}:changeSet/${pEnvironmentPrefix}*/*'
 
           # Allow full control over project secrets
           - Sid: PermissionsBoundarySecretsManager
@@ -254,7 +256,7 @@ Resources:
             Action:
               - secretsmanager:*
             Resource:
-              - !Sub 'arn:aws:secretsmanager:*:${AWS::AccountId}:secret:${pEnvironmentPrefix}/*'
+              - !Sub 'arn:${AWS::Partition}:secretsmanager:*:${AWS::AccountId}:secret:${pEnvironmentPrefix}/*'
 
           # Allow various metrics access, billing/storage
           - Sid: PermissionsBoundaryMetrics
@@ -280,7 +282,7 @@ Resources:
             - Effect: Allow
               Principal:
                 AWS:
-                  - !Sub "arn:aws:iam::${pDataPortalAccountId}:root"
+                  - !Sub "arn:${AWS::Partition}:iam::${pDataPortalAccountId}:root"
               Action:
                 - 'sts:AssumeRole'
               Condition:
@@ -289,7 +291,7 @@ Resources:
             - Effect: Allow
               Principal:
                 AWS:
-                  - !Sub "arn:aws:iam::${pDataPortalAccountId}:root"
+                  - !Sub "arn:${AWS::Partition}:iam::${pDataPortalAccountId}:root"
               Action:
                 - 'sts:AssumeRole'
 
@@ -307,7 +309,7 @@ Resources:
             Action:
               - s3:GetObject*
             Resource:
-              - 'arn:aws:s3:::cirro-resources-*'
+              - !Sub 'arn:${AWS::Partition}:s3:::cirro-resources-*'
 
           - Sid: ProjectBudgetTemplateDeploy
             Effect: Allow
@@ -331,7 +333,7 @@ Resources:
               - sns:UntagResource
               - sns:ListTagsForResource
             Resource:
-              - !Sub 'arn:aws:sns:*:${AWS::AccountId}:${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:sns:*:${AWS::AccountId}:${pEnvironmentPrefix}*'
 
           - Sid: DatasetFileUploadedSqsPermissions
             Effect: Allow
@@ -347,7 +349,7 @@ Resources:
               - sqs:UntagQueue
               - sqs:ListQueueTags
             Resource:
-              - !Sub 'arn:aws:sqs:*:${AWS::AccountId}:${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:sqs:*:${AWS::AccountId}:${pEnvironmentPrefix}*'
 
           - Sid: ProjectBatchTemplateDeploy
             Effect: Allow
@@ -388,6 +390,7 @@ Resources:
               - ec2:DescribeTags
               - ec2:CreateTags
               - ec2:DeleteTags
+              - ec2:RunInstances
             Resource: '*'
 
           - Sid: ProjectBatchTemplateCWPermissions
@@ -400,9 +403,9 @@ Resources:
               - logs:ListTagsForResource
               - logs:UntagResource
             Resource:
-              - !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/sagemaker/NotebookInstances*'
-              - !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/lambda/${pEnvironmentPrefix}*'
-              - !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:/${pEnvironmentPrefix}/*'
+              - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/aws/sagemaker/NotebookInstances*'
+              - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/aws/lambda/${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/${pEnvironmentPrefix}/*'
 
           - Sid: ProjectS3TemplateDeploy
             Effect: Allow
@@ -422,14 +425,14 @@ Resources:
               - s3:*BucketPublicAccessBlock
               - s3:ListBucket
             Resource:
-              - 'arn:aws:s3:::project-*'
+              - !Sub 'arn:${AWS::Partition}:s3:::project-*'
 
           - Sid: ProjectS3FileSeed
             Effect: Allow
             Action:
               - s3:PutObject
             Resource:
-              - 'arn:aws:s3:::project-*/resources/*'
+              - !Sub 'arn:${AWS::Partition}:s3:::project-*/resources/*'
 
           - Sid: ProjectKmsPermissions
             Effect: Allow
@@ -441,8 +444,8 @@ Resources:
              - kms:GenerateDataKey*
             Resource: '*'
             Condition:
-             ForAnyValue:StringLike:
-               kms:ResourceAliases: 'alias/project-*'
+              ForAnyValue:StringLike:
+                kms:ResourceAliases: 'alias/project-*'
 
           - Sid: ProjectIamRolePermissions
             Effect: Allow
@@ -465,26 +468,33 @@ Resources:
               - iam:ListRolePolicies
               - iam:UntagPolicy
               - iam:PutRolePermissionsBoundary
+              - iam:CreatePolicy
+              - iam:DeletePolicy
+              - iam:CreatePolicyVersion
+              - iam:DeletePolicyVersion
+              - iam:GetPolicy
+              - iam:ListPolicyVersions
             Resource:
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/${pEnvironmentPrefix}*'
 
           - Sid: IAMInstanceProfilePermissions
             Effect: Allow
             Action:
               - iam:*InstanceProfile
             Resource:
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:instance-profile/${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:instance-profile/${pEnvironmentPrefix}*'
 
           - Sid: IAMServiceRoleCreationPermissions
             Effect: Allow
             Action:
               - iam:CreateServiceLinkedRole
             Resource:
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.amazonaws.com/*'
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/aws-service-role/spot.amazonaws.com/*'
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/aws-service-role/batch.amazonaws.com/*'
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/aws-service-role/autoscaling.amazonaws.com/*'
-              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/aws-service-role/servicequotas.amazonaws.com/*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/ecs.amazonaws.com/*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/spot.amazonaws.com/*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/batch.amazonaws.com/*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/autoscaling.amazonaws.com/*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/servicequotas.amazonaws.com/*'
 
           # This is optional
           - Sid: ProjectAutomationAccountLevelPermissions
@@ -508,6 +518,27 @@ Resources:
               - sagemaker:DeleteTags
             Resource: '*'
 
+          - Sid: ProjectWorkspaceAccess
+            Effect: Allow
+            Action:
+              - ecs:*
+              - autoscaling:*
+            Resource:
+              - !Sub "arn:${AWS::Partition}:ecs:*:${AWS::AccountId}:cluster/${pEnvironmentPrefix}*"
+              - !Sub "arn:${AWS::Partition}:ecs:*:${AWS::AccountId}:container-instance/${pEnvironmentPrefix}*"
+              - !Sub "arn:${AWS::Partition}:ecs:*:${AWS::AccountId}:task-definition/${pEnvironmentPrefix}*"
+              - !Sub "arn:${AWS::Partition}:ecs:*:${AWS::AccountId}:task/${pEnvironmentPrefix}*"
+              - !Sub "arn:${AWS::Partition}:ecs:*:${AWS::AccountId}:capacity-provider/${pEnvironmentPrefix}*"
+              - !Sub "arn:${AWS::Partition}:autoscaling:*:${AWS::AccountId}:autoScalingGroup:*:autoScalingGroupName/${pEnvironmentPrefix}*"
+
+          - Sid: ProjectWorkspaceAccessAll
+            Effect: Allow
+            Action:
+              - ecs:Describe*
+              - autoscaling:Describe*
+              - ecs:DeregisterTaskDefinition
+            Resource: '*'
+
           - Sid: ProjectLambdaAccess
             Effect: Allow
             Action:
@@ -523,7 +554,7 @@ Resources:
               - lambda:*Resource
               - lambda:*FunctionConcurrency
             Resource:
-              - !Sub 'arn:aws:lambda:*:${AWS::AccountId}:function:${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:lambda:*:${AWS::AccountId}:function:${pEnvironmentPrefix}*'
 
           - Sid: LambdaEventMapping
             Effect: Allow
@@ -551,7 +582,7 @@ Resources:
               - events:TagResource
               - events:UntagResource
             Resource:
-              - !Sub 'arn:aws:events:*:${AWS::AccountId}:rule/${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:events:*:${AWS::AccountId}:rule/${pEnvironmentPrefix}*'
 
           - Sid: ProjectCfnOutputsSSMParameters
             Effect: Allow
@@ -563,7 +594,8 @@ Resources:
               - ssm:ListTagsForResource
               - ssm:GetParameters
             Resource:
-              - !Sub 'arn:aws:ssm:*:${AWS::AccountId}:parameter/${pEnvironmentPrefix}/*'
+              - !Sub 'arn:${AWS::Partition}:ssm:*:${AWS::AccountId}:parameter/${pEnvironmentPrefix}/*'
+              - !Sub 'arn:${AWS::Partition}:ssm:*:*:parameter/*'
 
           - Sid: ProjectCfnStackPermissions
             Effect: Allow
@@ -583,8 +615,8 @@ Resources:
               - cloudformation:TagResource
               - cloudformation:UntagResource
             Resource:
-              - !Sub 'arn:aws:cloudformation:*:${AWS::AccountId}:stack/${pEnvironmentPrefix}*/*'
-              - !Sub 'arn:aws:cloudformation:*:${AWS::AccountId}:changeSet/${pEnvironmentPrefix}*/*'
+              - !Sub 'arn:${AWS::Partition}:cloudformation:*:${AWS::AccountId}:stack/${pEnvironmentPrefix}*/*'
+              - !Sub 'arn:${AWS::Partition}:cloudformation:*:${AWS::AccountId}:changeSet/${pEnvironmentPrefix}*/*'
 
           - Sid: ResourceGroupTagging
             Effect: Allow
