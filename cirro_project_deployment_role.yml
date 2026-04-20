@@ -26,6 +26,7 @@ Metadata:
     config:
       ignore_checks:
         - W2001
+        - W1031
 Conditions:
   HasAccountOwner:
     Fn::Not:
@@ -269,6 +270,13 @@ Resources:
               - cloudwatch:ListMetrics
             Resource: '*'
 
+          - Sid: PermissionBoundaryWorkspaces
+            Effect: Allow
+            Action:
+              - ecs:*
+              - elasticfilesystem:*
+            Resource: '*'
+
   rProjectLambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -373,11 +381,14 @@ Resources:
               - ec2:DescribeImages
               - ec2:CreateSecurityGroup
               - ec2:AuthorizeSecurityGroupEgress
+              - ec2:AuthorizeSecurityGroupIngress
               - ec2:DescribeSecurityGroupRules
               - ec2:UpdateSecurityGroupRuleDescriptionsEgress
+              - ec2:UpdateSecurityGroupRuleDescriptionsIngress
               - ec2:ModifySecurityGroupRules
               - ec2:DescribeSecurityGroups
               - ec2:RevokeSecurityGroupEgress
+              - ec2:RevokeSecurityGroupIngress
               - ec2:DeleteSecurityGroup
               - ec2:CreateLaunchTemplate
               - ec2:CreateLaunchTemplateVersion
@@ -537,6 +548,27 @@ Resources:
               - ecs:Describe*
               - autoscaling:Describe*
               - ecs:DeregisterTaskDefinition
+            Resource: '*'
+
+          - Sid: ProjectWorkspaceEFSAccess
+            Effect: Allow
+            Action:
+              - elasticfilesystem:CreateFileSystem
+              - elasticfilesystem:DeleteFileSystem
+              - elasticfilesystem:CreateMountTarget
+              - elasticfilesystem:DeleteMountTarget
+              - elasticfilesystem:TagResource
+              - elasticfilesystem:UntagResource
+              - elasticfilesystem:UpdateFileSystem
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:elasticfilesystem:*:*:file-system/*'
+
+          - Sid: ProjectWorkspaceEFSDescribe
+            Effect: Allow
+            Action:
+              - elasticfilesystem:DescribeFileSystems
+              - elasticfilesystem:DescribeMountTargets
+              - elasticfilesystem:DescribeMountTargetSecurityGroups
             Resource: '*'
 
           - Sid: ProjectLambdaAccess
