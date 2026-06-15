@@ -92,9 +92,12 @@ Resources:
             Effect: Allow
             Action:
               - s3:*
+              - s3tables:*
             Resource:
               - !Sub 'arn:${AWS::Partition}:s3:::project-*'
               - !Sub 'arn:${AWS::Partition}:s3:*:*:accesspoint/cirro-*'
+              - !Sub 'arn:${AWS::Partition}:s3tables:*:*:bucket/project-*'
+              - !Sub 'arn:${AWS::Partition}:s3tables:*:*:bucket/project-*/*'
 
           # Respect cross account access granted through bucket policy
           - Sid: PermissionsBoundaryS3AccessNotInAccount
@@ -656,6 +659,32 @@ Resources:
               - tag:UntagResources
               - tag:TagResources
             Resource: '*'
+
+          - Sid: S3TablesDeploymentAccess
+            Effect: Allow
+            Action:
+              - s3tables:CreateTableBucket
+              - s3tables:DeleteTableBucket
+              - s3tables:GetTableBucket
+              - s3tables:ListTableBuckets
+              - s3tables:PutTableBucketEncryption
+              - s3tables:GetTableBucketEncryption
+              - s3tables:PutTableBucketMaintenanceConfiguration
+              - s3tables:GetTableBucketMaintenanceConfiguration
+              - s3tables:PutTableBucketPolicy
+              - s3tables:GetTableBucketPolicy
+              - s3tables:TagResource
+              - s3tables:PutTableBucketStorageClass
+              - s3tables:PutTableBucketMetricsConfiguration
+              - s3tables:ListTagsForResource
+              - s3tables:GetTableBucketMetricsConfiguration
+              - s3tables:GetTableBucketReplication
+              - s3tables:GetTableBucketStorageClass
+              - s3tables:DeleteTableBucketPolicy
+              - s3tables:UntagResource
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:s3tables:*:*:bucket/project-*'
+              - !Sub 'arn:${AWS::Partition}:s3tables:*:*:bucket/project-*/*'
 
   rPermissionBoundaryArn:
     Type: AWS::SSM::Parameter

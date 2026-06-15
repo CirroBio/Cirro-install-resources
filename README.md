@@ -50,7 +50,6 @@ module "cirro_deploy_role" {
 
 #### Stack (Individual Account)
 
-The easiest 
 In the Create Project interface, select **I want to use my own AWS account** and click the **CloudFormation Wizard** to bring up the wizard with all the details filled in.
 
 You can also manually launch the CloudFormation Create stack wizard through the AWS Console. Use the S3 mirror when providing the template source.
