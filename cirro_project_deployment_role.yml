@@ -660,8 +660,7 @@ Resources:
               - tag:TagResources
             Resource: '*'
 
-          # Just give cloudformation permissions to deploy s3tables. This is required to deploy s3tables resources in the project account, but we don't want to give blanket s3tables permissions outside of that.
-          - Sid: S3TablesAccess
+          - Sid: S3TablesDeploymentAccess
             Effect: Allow
             Action:
               - s3tables:CreateTableBucket
