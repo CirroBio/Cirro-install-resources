@@ -9,7 +9,6 @@ on:
 
 env:
   ROLE_FILE: cirro_project_deployment_role.yml
-  ARTIFACT_BUCKET: cirro-marketplace-assets
 
 jobs:
   publish:
