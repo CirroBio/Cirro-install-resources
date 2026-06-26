@@ -9,6 +9,7 @@ on:
 
 env:
   ROLE_FILE: cirro_project_deployment_role.yml
+  ARTIFACT_BUCKET: cirro-marketplace-assets
 
 jobs:
   publish:
@@ -23,7 +24,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ vars.ARTIFACT_ACCOUNT }}:role/${{ vars.ARTIFACT_ROLE }}
+          role-to-assume: arn:aws:iam::${{ secrets.ARTIFACT_ACCOUNT }}:role/${{ secrets.ARTIFACT_ROLE }}
           role-session-name: ${{ env.GITHUB_JOB }}
           aws-region: ${{ vars.AWS_REGION }}
 
