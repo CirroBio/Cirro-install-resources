@@ -1,0 +1,31 @@
+name: Publish install resources to s3
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  ROLE_FILE: cirro_project_deployment_role.yml
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.ARTIFACT_ACCOUNT }}:role/${{ secrets.ARTIFACT_ROLE }}
+          role-session-name: ${{ env.GITHUB_JOB }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Publish project role
+        run: |
+          aws s3 cp ${{ env.ROLE_FILE }} s3://${{ vars.ARTIFACT_BUCKET }}/${{ env.ROLE_FILE }}
+
