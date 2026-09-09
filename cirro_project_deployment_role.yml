@@ -167,6 +167,9 @@ Resources:
               - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/batch.amazonaws.com/*'
               - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/autoscaling.amazonaws.com/*'
               - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/servicequotas.amazonaws.com/*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/omics.amazonaws.com/*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/pullthroughcache.ecr.amazonaws.com/*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/ecr.amazonaws.com/*'
 
           # This is project level account automation (it is optional for BYOA)
           - Sid: PermissionsBoundaryProjectAutomationAccountLevelPermissions
@@ -510,6 +513,9 @@ Resources:
               - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/batch.amazonaws.com/*'
               - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/autoscaling.amazonaws.com/*'
               - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/servicequotas.amazonaws.com/*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/omics.amazonaws.com/*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/pullthroughcache.ecr.amazonaws.com/*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/ecr.amazonaws.com/*'
 
           # This is optional
           - Sid: ProjectAutomationAccountLevelPermissions
@@ -525,12 +531,11 @@ Resources:
               - servicequotas:ListRequestedServiceQuotaChangeHistoryByQuota
             Resource: '*'
 
-          - Sid: ProjectSagemakerAccess
+          - Sid: ProjectEcrAccess
             Effect: Allow
             Action:
-              - sagemaker:*NotebookInstanceLifecycleConfig
-              - sagemaker:AddTags
-              - sagemaker:DeleteTags
+              - ecr:Batch*
+              - ecr:GetDownloadUrlForLayer
             Resource: '*'
 
           - Sid: ProjectWorkspaceAccess
@@ -661,7 +666,7 @@ Resources:
               - tag:TagResources
             Resource: '*'
 
-          - Sid: S3TablesDeploymentAccess
+          - Sid: S3TablesAccess
             Effect: Allow
             Action:
               - s3tables:CreateTableBucket
@@ -686,6 +691,80 @@ Resources:
             Resource:
               - !Sub 'arn:${AWS::Partition}:s3tables:*:*:bucket/project-*'
               - !Sub 'arn:${AWS::Partition}:s3tables:*:*:bucket/project-*/*'
+
+  # AHO grants live in a dedicated managed policy rather than the inline
+  # policy to workaround the 10,240-byte limit
+  rProjectOmicsGrantsPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      ManagedPolicyName: !Sub '${pEnvironmentPrefix}-ProjectOmicsDeploymentGrants'
+      Description: HealthOmics deployment grants for the project deployment role
+      Roles:
+        - !Ref rProjectLambdaRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ProjectOmicsConfigurationAccess
+            Effect: Allow
+            Action:
+              - omics:DeleteConfiguration
+              - omics:GetConfiguration
+              - omics:TagResource
+              - omics:UntagResource
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:omics:*:${AWS::AccountId}:configuration/*'
+
+          - Sid: ProjectOmicsRunAccess
+            Effect: Allow
+            Action:
+              - omics:DeleteRunGroup
+              - omics:GetRunGroup
+              - omics:UpdateRunGroup
+              - omics:DeleteRunCache
+              - omics:GetRunCache
+              - omics:TagResource
+              - omics:UntagResource
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:omics:*:${AWS::AccountId}:runGroup/*'
+              - !Sub 'arn:${AWS::Partition}:omics:*:${AWS::AccountId}:runCache/*'
+
+          - Sid: ProjectOmicsRunCacheAccess
+            Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+            Resource:
+              - !Sub "arn:${AWS::Partition}:s3:::project-*-scratch/cirro-aho-runcache/*"
+
+          - Sid: ProjectOmicsUnscopedAccess
+            Effect: Allow
+            Action:
+              - omics:CreateConfiguration
+              - omics:CreateRunGroup
+              - omics:CreateRunCache
+              - omics:ListRunGroups
+              - omics:ListTagsForResource
+              - omics:ListRunCaches
+            Resource: '*'
+
+          - Sid: ProjectEcrPullThroughCacheAccess
+            Effect: Allow
+            Action:
+              - ecr:CreatePullThroughCacheRule
+              - ecr:DeletePullThroughCacheRule
+              - ecr:DescribePullThroughCacheRules
+              - ecr:CreateRepositoryCreationTemplate
+              - ecr:UpdateRepositoryCreationTemplate
+              - ecr:DeleteRepositoryCreationTemplate
+              - ecr:DescribeRepositoryCreationTemplates
+              - ecr:GetRegistryPolicy
+              - ecr:PutRegistryPolicy
+              - ecr:CreateRepository
+              - ecr:SetRepositoryPolicy
+              - ecr:PutLifecyclePolicy
+              - ecr:GetLifecyclePolicy
+              - ecr:DeleteLifecyclePolicy
+            Resource: '*'
 
   rPermissionBoundaryArn:
     Type: AWS::SSM::Parameter
