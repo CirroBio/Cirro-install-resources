@@ -557,7 +557,7 @@ Resources:
               - autoscaling:Describe*
               - ecs:DeregisterTaskDefinition
             Resource: '*'
-asdasdas
+
           - Sid: ProjectWorkspaceEFSAccess
             Effect: Allow
             Action:
