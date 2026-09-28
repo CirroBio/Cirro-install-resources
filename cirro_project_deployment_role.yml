@@ -83,7 +83,6 @@ Resources:
             Resource:
               - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/aws/batch/job:*'
               - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/aws/omics/WorkflowLog:*'
-              - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/aws/sagemaker/NotebookInstances:*'
               - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/aws/lambda/${pEnvironmentPrefix}*'
               - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/${pEnvironmentPrefix}/*'
 
@@ -420,9 +419,9 @@ Resources:
               - logs:ListTagsForResource
               - logs:UntagResource
             Resource:
-              - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/aws/sagemaker/NotebookInstances*'
               - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/aws/lambda/${pEnvironmentPrefix}*'
               - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/${pEnvironmentPrefix}/*'
+              - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/aws/omics/WorkflowLog'
 
           - Sid: ProjectS3TemplateDeploy
             Effect: Allow
