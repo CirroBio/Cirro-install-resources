@@ -1,0 +1,23 @@
+name: Validate Template
+
+on:
+  push:
+    branches:
+      - main
+  # Run tests for any PRs.
+  pull_request:
+
+jobs:
+  cfn-lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: setup cfn linter
+        uses: scottbrenner/cfn-lint-action@8affffc34dddd6937bbc37f60901f71657e20fab
+
+      - name: Run cloudformation linter
+        run: |
+          cfn-lint --version
+          cfn-lint -t cirro*.yml
