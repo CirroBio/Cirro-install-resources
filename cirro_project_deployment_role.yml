@@ -42,8 +42,8 @@ Resources:
       PolicyDocument:
         Version: 2012-10-17
         Statement:
-          - Sid: PermissionsBoundaryProjectBudgetTemplateDeploy
-            Effect: Allow
+          # PermissionsBoundaryProjectBudgetTemplateDeploy
+          - Effect: Allow
             Action:
               - budgets:ViewBudget
               - budgets:ModifyBudget
@@ -51,8 +51,8 @@ Resources:
             Resource:
               - !Sub "arn:${AWS::Partition}:budgets::${AWS::AccountId}:budget/${pEnvironmentPrefix}*"
 
-          - Sid: PermissionsBoundarySnsSqsPermissions
-            Effect: Allow
+          # PermissionsBoundarySnsSqsPermissions
+          - Effect: Allow
             Action:
               - sns:*
               - sqs:*
@@ -60,8 +60,8 @@ Resources:
               - !Sub 'arn:${AWS::Partition}:sns:*:${AWS::AccountId}:${pEnvironmentPrefix}*'
               - !Sub 'arn:${AWS::Partition}:sqs:*:${AWS::AccountId}:${pEnvironmentPrefix}*'
 
-          - Sid: PermissionsBoundaryBatch
-            Effect: Allow
+          # PermissionsBoundaryBatch
+          - Effect: Allow
             Action:
               - batch:*
               - ec2:*
@@ -76,8 +76,8 @@ Resources:
               - omics:*
             Resource: '*'
 
-          - Sid: PermissionsBoundaryCloudwatchAccess
-            Effect: Allow
+          # PermissionsBoundaryCloudwatchAccess
+          - Effect: Allow
             Action:
               - logs:*
             Resource:
@@ -87,8 +87,8 @@ Resources:
               - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/${pEnvironmentPrefix}/*'
 
           # Allow complete access to the Cirro project bucket
-          - Sid: PermissionsBoundaryProjectS3Access
-            Effect: Allow
+          # PermissionsBoundaryProjectS3Access
+          - Effect: Allow
             Action:
               - s3:*
               - s3tables:*
@@ -99,8 +99,8 @@ Resources:
               - !Sub 'arn:${AWS::Partition}:s3tables:*:*:bucket/project-*/*'
 
           # Respect cross account access granted through bucket policy
-          - Sid: PermissionsBoundaryS3AccessNotInAccount
-            Effect: Allow
+          # PermissionsBoundaryS3AccessNotInAccount
+          - Effect: Allow
             Action:
               - s3:GetObject*
               - s3:PutObject
@@ -114,8 +114,8 @@ Resources:
                   - !Ref AWS::AccountId
 
           # Permission boundary enforcement
-          - Sid: DenyPermissionsBoundaryDeletion
-            Effect: Deny
+          # DenyPermissionsBoundaryDeletion
+          - Effect: Deny
             Action:
               - iam:DeleteRolePermissionsBoundary
             Resource: '*'
@@ -124,8 +124,8 @@ Resources:
                 iam:PermissionsBoundary:
                   - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/${pPermissionsBoundaryName}'
 
-          - Sid: DenyPolicyChange
-            Effect: Deny
+          # DenyPolicyChange
+          - Effect: Deny
             Action:
               - iam:CreatePolicyVersion
               - iam:DeletePolicyVersion
@@ -135,8 +135,8 @@ Resources:
               - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/${pPermissionsBoundaryName}'
 
           # Must create the role with this permission boundary
-          - Sid: EnforcePermissionBoundary
-            Effect: Deny
+          # EnforcePermissionBoundary
+          - Effect: Deny
             Action:
              - iam:CreateRole
             Resource: '*'
@@ -146,8 +146,8 @@ Resources:
                   - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/${pPermissionsBoundaryName}'
 
           # Allow Cirro to create IAM roles used in various actions
-          - Sid: PermissionsBoundaryProjectIamRolePermissions
-            Effect: Allow
+          # PermissionsBoundaryProjectIamRolePermissions
+          - Effect: Allow
             Action:
               - iam:*
             Resource:
@@ -156,8 +156,8 @@ Resources:
               - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:instance-profile/${pEnvironmentPrefix}*'
 
           # Create SLRs used in resources
-          - Sid: PermissionsBoundaryIAMServiceRoleCreationPermissions
-            Effect: Allow
+          # PermissionsBoundaryIAMServiceRoleCreationPermissions
+          - Effect: Allow
             Action:
               - iam:CreateServiceLinkedRole
             Resource:
@@ -171,8 +171,8 @@ Resources:
               - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/ecr.amazonaws.com/*'
 
           # This is project level account automation (it is optional for BYOA)
-          - Sid: PermissionsBoundaryProjectAutomationAccountLevelPermissions
-            Effect: Allow
+          # PermissionsBoundaryProjectAutomationAccountLevelPermissions
+          - Effect: Allow
             Action:
               - s3:PutAccountPublicAccessBlock
               - s3:GetAccountPublicAccessBlock
@@ -184,8 +184,8 @@ Resources:
             Resource: '*'
 
           # Allow access to project KMS key
-          - Sid: PermissionsBoundaryProjectKmsPermissions
-            Effect: Allow
+          # PermissionsBoundaryProjectKmsPermissions
+          - Effect: Allow
             Action:
              - kms:*
             Resource: '*'
@@ -193,23 +193,23 @@ Resources:
               ForAnyValue:StringLike:
                 kms:ResourceAliases: 'alias/project-*'
 
-          - Sid: PermissionsBoundaryProjectSagemakerAccess
-            Effect: Allow
+          # PermissionsBoundaryProjectSagemakerAccess
+          - Effect: Allow
             Action:
               - sagemaker:*
             Resource: '*'
 
           # Allow creation of lambdas used in Cirro
-          - Sid: PermissionsBoundaryProjectLambdaAccess
-            Effect: Allow
+          # PermissionsBoundaryProjectLambdaAccess
+          - Effect: Allow
             Action:
               - lambda:*
             Resource:
               - !Sub 'arn:${AWS::Partition}:lambda:*:${AWS::AccountId}:function:${pEnvironmentPrefix}*'
               - !Sub 'arn:${AWS::Partition}:lambda:*:${AWS::AccountId}:event-source-mapping:*'
 
-          - Sid: PermissionsBoundaryLambdaEventMapping
-            Effect: Allow
+          # PermissionsBoundaryLambdaEventMapping
+          - Effect: Allow
             Action:
               - lambda:*EventSourceMapping
             Resource: "*"
@@ -217,15 +217,15 @@ Resources:
               StringLike:
                 lambda:FunctionArn: !Sub "arn:${AWS::Partition}:lambda:*:${AWS::AccountId}:function:${pEnvironmentPrefix}*"
 
-          - Sid: PermissionsBoundaryProjectLambdaLayerAccess
-            Effect: Allow
+          # PermissionsBoundaryProjectLambdaLayerAccess
+          - Effect: Allow
             Action:
               - lambda:GetLayerVersion
             Resource: '*'
 
           # Allow talking to Cirro event bus and creating rules
-          - Sid: PermissionsBoundaryEventBridgeAccess
-            Effect: Allow
+          # PermissionsBoundaryEventBridgeAccess
+          - Effect: Allow
             Action:
               - events:*
               - execute-api:Invoke
@@ -235,16 +235,16 @@ Resources:
               - !Sub 'arn:${AWS::Partition}:events:*:${AWS::AccountId}:rule/${pEnvironmentPrefix}*'
 
           # Save SSM params under Cirro prefix
-          - Sid: PermissionsBoundaryProjectCfnOutputsSSMParameters
-            Effect: Allow
+          # PermissionsBoundaryProjectCfnOutputsSSMParameters
+          - Effect: Allow
             Action:
               - ssm:*
             Resource:
               - !Sub 'arn:${AWS::Partition}:ssm:*:${AWS::AccountId}:parameter/${pEnvironmentPrefix}/*'
 
           # Allow Cirro cloudformation stack management
-          - Sid: PermissionsBoundaryProjectCfnStackPermissions
-            Effect: Allow
+          # PermissionsBoundaryProjectCfnStackPermissions
+          - Effect: Allow
             Action:
               - cloudformation:*Stack
               - cloudformation:Describe*
@@ -257,16 +257,16 @@ Resources:
               - !Sub 'arn:${AWS::Partition}:cloudformation:*:${AWS::AccountId}:changeSet/${pEnvironmentPrefix}*/*'
 
           # Allow full control over project secrets
-          - Sid: PermissionsBoundarySecretsManager
-            Effect: Allow
+          # PermissionsBoundarySecretsManager
+          - Effect: Allow
             Action:
               - secretsmanager:*
             Resource:
               - !Sub 'arn:${AWS::Partition}:secretsmanager:*:${AWS::AccountId}:secret:${pEnvironmentPrefix}/*'
 
           # Allow various metrics access, billing/storage
-          - Sid: PermissionsBoundaryMetrics
-            Effect: Allow
+          # PermissionsBoundaryMetrics
+          - Effect: Allow
             Action:
               - tag:TagResources
               - tag:UntagResources
@@ -275,11 +275,44 @@ Resources:
               - cloudwatch:ListMetrics
             Resource: '*'
 
-          - Sid: PermissionBoundaryWorkspaces
-            Effect: Allow
+          # PermissionBoundaryWorkspaces
+          - Effect: Allow
             Action:
               - ecs:*
               - elasticfilesystem:*
+            Resource: '*'
+
+          # Cirro AI. Each action is confined by its own service's resources,
+          # so one statement serves them all; kept compact for the 6,144-character
+          # limit on this policy.
+          # PermissionsBoundaryAI
+          - Effect: Allow
+            Action:
+              - bedrock:*
+              - bedrock-agentcore:*
+              - dynamodb:*
+              - s3vectors:*
+              - scheduler:*
+              - secretsmanager:*
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:bedrock:*::foundation-model/*'
+              - !Sub 'arn:${AWS::Partition}:bedrock:*:${AWS::AccountId}:*'
+              - !Sub 'arn:${AWS::Partition}:bedrock-agentcore:*:${AWS::AccountId}:*'
+              - !Sub 'arn:${AWS::Partition}:dynamodb:*:${AWS::AccountId}:table/${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:scheduler:*:${AWS::AccountId}:schedule/*/${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:s3vectors:*:${AWS::AccountId}:bucket/project-*'
+              - !Sub 'arn:${AWS::Partition}:secretsmanager:*:${AWS::AccountId}:secret:bedrock-agentcore-identity!*'
+
+          # Calls that name no resource: reads, and the two AgentCore creates.
+          # PermissionsBoundaryAIUnscoped
+          - Effect: Allow
+            Action:
+              - bedrock:Get*
+              - bedrock:List*
+              - bedrock-agentcore:CreateGateway
+              - bedrock-agentcore:CreatePolicyEngine
+              - s3vectors:List*
+              - scheduler:List*
             Resource: '*'
 
   rProjectLambdaRole:
@@ -764,6 +797,120 @@ Resources:
               - ecr:GetLifecyclePolicy
               - ecr:DeleteLifecyclePolicy
             Resource: '*'
+
+  # Cirro AI deployment grants: what the project's AI stack creates, and the
+  # model and logging reads the substrate's reconciler makes. Capped by the boundary.
+  rProjectAIGrantsPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      ManagedPolicyName: !Sub '${pEnvironmentPrefix}-ProjectAIDeploymentGrants'
+      Description: Cirro AI deployment grants for the project deployment role
+      Roles:
+        - !Ref rProjectLambdaRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          # Bedrock: the project's guardrails, inference profiles and knowledge
+          # base, and the reconciler's first-use call to each approved model.
+          # Not model customisation or provisioned throughput.
+          - Sid: ProjectAIBedrock
+            Effect: Allow
+            Action:
+              - bedrock:*Guardrail*
+              - bedrock:*InferenceProfile*
+              - bedrock:*KnowledgeBase*
+              - bedrock:*DataSource*
+              - bedrock:*IngestionJob*
+              - bedrock:InvokeModel*
+              - bedrock:TagResource
+              - bedrock:UntagResource
+              - bedrock:ListTagsForResource
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:bedrock:*::foundation-model/*'
+              - !Sub 'arn:${AWS::Partition}:bedrock:*:${AWS::AccountId}:inference-profile/*'
+              - !Sub 'arn:${AWS::Partition}:bedrock:*:${AWS::AccountId}:application-inference-profile/*'
+              - !Sub 'arn:${AWS::Partition}:bedrock:*:${AWS::AccountId}:guardrail/*'
+              - !Sub 'arn:${AWS::Partition}:bedrock:*:${AWS::AccountId}:knowledge-base/*'
+
+          # AgentCore: the project's memory, and its gateway and policy engine
+          # when it has tenant-defined MCP servers.
+          - Sid: ProjectAIAgentCore
+            Effect: Allow
+            Action:
+              - bedrock-agentcore:*Memory*
+              - bedrock-agentcore:*Gateway*
+              - bedrock-agentcore:*Polic*
+              - bedrock-agentcore:*WorkloadIdentit*
+              - bedrock-agentcore:TagResource
+              - bedrock-agentcore:UntagResource
+              - bedrock-agentcore:ListTagsForResource
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:bedrock-agentcore:*:${AWS::AccountId}:*'
+
+          - Sid: ProjectAITable
+            Effect: Allow
+            Action:
+              - dynamodb:CreateTable
+              - dynamodb:DeleteTable
+              - dynamodb:UpdateTable
+              - dynamodb:Describe*
+              - dynamodb:UpdateTimeToLive
+              - dynamodb:UpdateContinuousBackups
+              - dynamodb:TagResource
+              - dynamodb:UntagResource
+              - dynamodb:ListTagsOfResource
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:dynamodb:*:${AWS::AccountId}:table/${pEnvironmentPrefix}*'
+
+          - Sid: ProjectAIVectorsAndSchedules
+            Effect: Allow
+            Action:
+              - s3vectors:*VectorBucket*
+              - s3vectors:*Index*
+              - s3vectors:TagResource
+              - s3vectors:UntagResource
+              - s3vectors:ListTagsForResource
+              - scheduler:CreateSchedule
+              - scheduler:UpdateSchedule
+              - scheduler:DeleteSchedule
+              - scheduler:GetSchedule
+              - scheduler:TagResource
+              - scheduler:UntagResource
+              - scheduler:ListTagsForResource
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:s3vectors:*:${AWS::AccountId}:bucket/project-*'
+              - !Sub 'arn:${AWS::Partition}:scheduler:*:${AWS::AccountId}:schedule/*/${pEnvironmentPrefix}*'
+
+          # Calls that name no resource: reads, and the two AgentCore creates.
+          - Sid: ProjectAIUnscoped
+            Effect: Allow
+            Action:
+              - bedrock:ListFoundationModels
+              - bedrock:GetFoundationModel*
+              - bedrock:ListInferenceProfiles
+              - bedrock:ListGuardrails
+              - bedrock:ListKnowledgeBases
+              - bedrock:GetModelInvocationLoggingConfiguration
+              - bedrock-agentcore:CreateGateway
+              - bedrock-agentcore:CreatePolicyEngine
+              - bedrock-agentcore:List*
+              - s3vectors:ListVectorBuckets
+              - scheduler:ListSchedules
+            Resource: '*'
+
+          # The project key, for the AI stack's encrypted table, guardrail and
+          # memory: as ProjectKmsPermissions, plus Decrypt.
+          - Sid: ProjectAIKms
+            Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:DescribeKey
+              - kms:CreateGrant
+              - kms:GenerateDataKey*
+            Resource: '*'
+            Condition:
+              ForAnyValue:StringLike:
+                kms:ResourceAliases: 'alias/project-*'
 
   rPermissionBoundaryArn:
     Type: AWS::SSM::Parameter
