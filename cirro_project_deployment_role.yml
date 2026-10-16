@@ -27,6 +27,10 @@ Metadata:
       ignore_checks:
         - W2001
         - W1031
+Mappings:
+  TemplateInfo:
+    Version:
+      Value: '2026.10.16'
 Conditions:
   HasAccountOwner:
     Fn::Not:
@@ -632,6 +636,7 @@ Resources:
               - ssm:RemoveTagsFromResource
               - ssm:AddTagsToResource
               - ssm:ListTagsForResource
+              - ssm:GetParameter
               - ssm:GetParameters
             Resource:
               - !Sub 'arn:${AWS::Partition}:ssm:*:${AWS::AccountId}:parameter/${pEnvironmentPrefix}/*'
@@ -780,3 +785,11 @@ Resources:
       Type: String
       Value: !Ref rProjectLambdaRole
       Description: SSM Parameter for the Project deployment role
+
+  rDeploymentRoleVersion:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: '/Cirro/DeploymentRoleVersion'
+      Type: String
+      Value: !FindInMap [TemplateInfo, Version, Value]
+      Description: SSM Parameter for the version of the project deployment role template
