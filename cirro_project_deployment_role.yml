@@ -30,7 +30,7 @@ Metadata:
 Mappings:
   TemplateInfo:
     Version:
-      Value: '2026.11.12'
+      Value: '2026.11.13'
 Conditions:
   HasAccountOwner:
     Fn::Not:
@@ -267,6 +267,40 @@ Resources:
               - secretsmanager:*
             Resource:
               - !Sub 'arn:${AWS::Partition}:secretsmanager:*:${AWS::AccountId}:secret:${pEnvironmentPrefix}/*'
+
+          # Allow AI in projects: Bedrock models through each project's own inference profiles
+          - Sid: PermissionsBoundaryBedrock
+            Effect: Allow
+            Action:
+              - bedrock:InvokeModel
+              - bedrock:InvokeModelWithResponseStream
+              - bedrock:CreateInferenceProfile
+              - bedrock:GetInferenceProfile
+              - bedrock:ListInferenceProfiles
+              - bedrock:TagResource
+              - bedrock:GetFoundationModel
+            Resource: '*'
+
+          # Allow AI in projects: each project's AgentCore gateway for MCP tools, and its sign-ins
+          - Sid: PermissionsBoundaryAgentCore
+            Effect: Allow
+            Action:
+              - bedrock-agentcore:*
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:bedrock-agentcore:*:${AWS::AccountId}:*'
+
+          # The secrets AgentCore keeps for MCP sign-ins, in its own name
+          - Sid: PermissionsBoundaryAgentCoreSecrets
+            Effect: Allow
+            Action:
+              - secretsmanager:CreateSecret
+              - secretsmanager:PutSecretValue
+              - secretsmanager:DescribeSecret
+              - secretsmanager:GetSecretValue
+              - secretsmanager:DeleteSecret
+              - secretsmanager:TagResource
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:secretsmanager:*:${AWS::AccountId}:secret:bedrock-agentcore-identity!*'
 
           # Allow various metrics access, billing/storage
           - Sid: PermissionsBoundaryMetrics
