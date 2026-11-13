@@ -30,7 +30,7 @@ Metadata:
 Mappings:
   TemplateInfo:
     Version:
-      Value: '2026.10.16'
+      Value: '2026.11.12'
 Conditions:
   HasAccountOwner:
     Fn::Not:
@@ -86,7 +86,7 @@ Resources:
               - logs:*
             Resource:
               - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/aws/batch/job:*'
-              - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/aws/omics/WorkflowLog:*'
+              - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/aws/omics/WorkflowLog*'
               - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/aws/lambda/${pEnvironmentPrefix}*'
               - !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/${pEnvironmentPrefix}/*'
 
