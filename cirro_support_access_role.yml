@@ -1,0 +1,356 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Deploys an IAM role that grants Cirro support guarded administrative access to this account
+  for debugging and set up. Delete the stack to revoke access.
+Parameters:
+  pDataPortalAccountId:
+    Description: >-
+      (Required) Enter the account ID of your Cirro Tenant.
+      Access to this role is delegated to that account, which controls who in Cirro support can assume it.
+    Type: String
+    AllowedPattern: '^\d{12}$'
+    ConstraintDescription: Must be a 12 digit AWS account ID.
+  pAccessExpiry:
+    Description: >-
+      (Optional) UTC date after which the role can no longer be assumed, e.g. 2027-01-31 or 2027-01-31T17:00:00Z.
+      Leave blank for no expiry.
+    Default: ''
+    Type: String
+    AllowedPattern: '^$|^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}Z)?$'
+    ConstraintDescription: Must be blank or a UTC date such as 2027-01-31 or 2027-01-31T17:00:00Z.
+  pRoleName:
+    Description: '(Advanced) Support access role name.'
+    Default: 'Cirro-SupportAccessRole'
+    Type: String
+  pEnvironmentPrefix:
+    Description: '(Advanced) Enter the prefix used to identify resources created by Cirro in this account.'
+    Default: 'Cirro'
+    Type: String
+  pCirroPermissionsBoundaryName:
+    Description: '(Advanced) Name of the permissions boundary created by the Cirro project deployment role template.'
+    Default: 'CirroPermissionsBoundary'
+    Type: String
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - W2001
+        - W1031
+Mappings:
+  TemplateInfo:
+    Version:
+      Value: '2026.11.19'
+Conditions:
+  HasAccessExpiry:
+    Fn::Not:
+      - Fn::Equals:
+          - !Ref pAccessExpiry
+          - ''
+Resources:
+  # The role and its policies live under the /support-access/ IAM path so that their ARNs
+  # never match the '${pEnvironmentPrefix}*' patterns that Cirro roles are allowed to manage.
+  # Do not move them out of this path, otherwise the guardrails can be removed through a Cirro role.
+
+  # Upper limit of what the support role can do: the services Cirro uses, read-only context
+  # for debugging, and no way to grant itself (or anything else) more access.
+  rSupportPermissionsBoundary:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      ManagedPolicyName: !Sub '${pRoleName}Boundary'
+      Path: /support-access/
+      Description: Permissions boundary for the Cirro support access role
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          # Services used by Cirro. Anything not listed here (databases, marketplace, domains,
+          # billing, organizations, account settings, ...) is unavailable to the role.
+          - Sid: AllowCirroServices
+            Effect: Allow
+            Action:
+              - application-autoscaling:*
+              - autoscaling:*
+              - batch:*
+              - budgets:*
+              - cloudformation:*
+              - cloudshell:*
+              - cloudwatch:*
+              - ec2:*
+              - ec2messages:*
+              - ecr:*
+              - ecs:*
+              - elasticfilesystem:*
+              - events:*
+              - iam:*
+              - kms:*
+              - lambda:*
+              - logs:*
+              - omics:*
+              - resource-groups:*
+              - s3:*
+              - s3tables:*
+              - sagemaker:Describe*
+              - sagemaker:List*
+              - sagemaker:Stop*
+              - sagemaker:Delete*
+              - secretsmanager:*
+              - servicequotas:*
+              - sns:*
+              - sqs:*
+              - ssm:*
+              - ssmmessages:*
+              - support:*
+              - tag:*
+            Resource: '*'
+
+          - Sid: AllowReadOnlyContext
+            Effect: Allow
+            Action:
+              - account:Get*
+              - account:List*
+              - ce:Describe*
+              - ce:Get*
+              - ce:List*
+              - cloudtrail:Describe*
+              - cloudtrail:Get*
+              - cloudtrail:List*
+              - cloudtrail:LookupEvents
+              - health:Describe*
+              - organizations:Describe*
+              - organizations:List*
+              - pricing:*
+              - sts:DecodeAuthorizationMessage
+              - sts:GetCallerIdentity
+            Resource: '*'
+
+          # IAM changes are limited to Cirro resources: no users, access keys, identity providers,
+          # account settings, or changes to roles and policies that do not belong to Cirro.
+          - Sid: DenyIamChangesOutsideCirro
+            Effect: Deny
+            Action:
+              - iam:Add*
+              - iam:Attach*
+              - iam:Change*
+              - iam:Create*
+              - iam:Deactivate*
+              - iam:Delete*
+              - iam:Detach*
+              - iam:Disable*
+              - iam:Enable*
+              - iam:PassRole
+              - iam:Put*
+              - iam:Remove*
+              - iam:Reset*
+              - iam:Resync*
+              - iam:Set*
+              - iam:Tag*
+              - iam:Untag*
+              - iam:Update*
+              - iam:Upload*
+            NotResource:
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:instance-profile/${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/*'
+
+          # The Cirro permissions boundary caps every Cirro role, so it cannot be edited from here.
+          # Update it by updating the project deployment role stack instead.
+          - Sid: DenyCirroPermissionsBoundaryChanges
+            Effect: Deny
+            NotAction:
+              - iam:Get*
+              - iam:List*
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/${pCirroPermissionsBoundaryName}'
+
+          # Roles can only be created or have their permissions changed while capped by the Cirro permissions boundary
+          - Sid: EnforceCirroPermissionsBoundary
+            Effect: Deny
+            Action:
+              - iam:CreateRole
+              - iam:PutRolePermissionsBoundary
+              - iam:AttachRolePolicy
+              - iam:DetachRolePolicy
+              - iam:PutRolePolicy
+              - iam:DeleteRolePolicy
+            Resource: '*'
+            Condition:
+              StringNotEquals:
+                iam:PermissionsBoundary:
+                  - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/${pCirroPermissionsBoundaryName}'
+
+          - Sid: DenyPermissionsBoundaryRemoval
+            Effect: Deny
+            Action:
+              - iam:DeleteRolePermissionsBoundary
+            Resource: '*'
+
+          # No hopping into other roles, in this account or any other
+          - Sid: DenyAssumeRole
+            Effect: Deny
+            Action:
+              - sts:AssumeRole
+            Resource: '*'
+
+  # Explicit limits on spending money and doing damage within the allowed services
+  rSupportGuardrailsPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      ManagedPolicyName: !Sub '${pRoleName}Guardrails'
+      Path: /support-access/
+      Description: Spend and damage guardrails for the Cirro support access role
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          # No long-term or up-front financial commitments
+          - Sid: DenySpendCommitments
+            Effect: Deny
+            Action:
+              - ec2:Purchase*
+              - ec2:AcceptReservedInstancesExchangeQuote
+              - ec2:CreateReservedInstancesListing
+              - ec2:ModifyReservedInstances
+              - ec2:CreateCapacityReservation*
+              - ec2:AllocateHosts
+            Resource: '*'
+
+          # No launching compute directly. Workloads are started through Cirro, which uses its own roles.
+          # Stopping and terminating remain available. SageMaker is view, stop and delete only (see the boundary).
+          - Sid: DenyComputeLaunch
+            Effect: Deny
+            Action:
+              - ec2:RunInstances
+              - ec2:StartInstances
+              - ec2:CreateFleet
+              - ec2:ModifyFleet
+              - ec2:RequestSpotInstances
+              - ec2:RequestSpotFleet
+              - ec2:ModifySpotFleetRequest
+              - autoscaling:CreateAutoScalingGroup
+              - autoscaling:UpdateAutoScalingGroup
+              - autoscaling:SetDesiredCapacity
+              - batch:SubmitJob
+              - ecs:RunTask
+              - ecs:StartTask
+              - ecs:CreateService
+              - ecs:UpdateService
+              - omics:StartRun
+            Resource: '*'
+
+          # Service quotas are the ceiling on on-demand spend. Cirro requests the increases it needs
+          # through the project deployment role; anything further is for the account owner to request.
+          - Sid: DenyQuotaIncreases
+            Effect: Deny
+            Action:
+              - servicequotas:RequestServiceQuotaIncrease
+            Resource: '*'
+
+          # No deleting data or the keys that protect it, and no locks that cannot be undone
+          - Sid: DenyDataDestruction
+            Effect: Deny
+            Action:
+              - s3:DeleteObject
+              - s3:DeleteObjectVersion
+              - s3:PutBucketObjectLockConfiguration
+              - s3:PutObjectRetention
+              - s3:PutObjectLegalHold
+              - s3tables:DeleteTableBucket
+              - s3tables:DeleteNamespace
+              - s3tables:DeleteTable
+              - elasticfilesystem:DeleteFileSystem
+              - kms:ScheduleKeyDeletion
+              - kms:DisableKey
+              - kms:DeleteImportedKeyMaterial
+            Resource: '*'
+
+          # No sharing data outside the account or weakening account-wide protections
+          - Sid: DenyDataExposure
+            Effect: Deny
+            Action:
+              - s3:PutBucketAcl
+              - s3:PutObjectAcl
+              - s3:PutAccountPublicAccessBlock
+              - ec2:ModifySnapshotAttribute
+              - ec2:ModifyImageAttribute
+              - ec2:DisableEbsEncryptionByDefault
+            Resource: '*'
+
+          # Secrets and parameters that do not belong to Cirro stay private
+          - Sid: DenySecretsOutsideCirro
+            Effect: Deny
+            Action:
+              - secretsmanager:GetSecretValue
+              - ssm:GetParameter*
+            NotResource:
+              - !Sub 'arn:${AWS::Partition}:secretsmanager:*:${AWS::AccountId}:secret:${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:ssm:*:${AWS::AccountId}:parameter/${pEnvironmentPrefix}*'
+              - !Sub 'arn:${AWS::Partition}:ssm:*::parameter/aws/*'
+
+          # Functions that do not belong to Cirro cannot be changed or run (they may carry other roles)
+          - Sid: DenyLambdaOutsideCirro
+            Effect: Deny
+            Action:
+              - lambda:CreateFunction
+              - lambda:UpdateFunctionCode
+              - lambda:UpdateFunctionConfiguration
+              - lambda:DeleteFunction
+              - lambda:InvokeFunction
+              - lambda:InvokeFunctionUrl
+              - lambda:AddPermission
+              - lambda:CreateFunctionUrlConfig
+            NotResource:
+              - !Sub 'arn:${AWS::Partition}:lambda:*:${AWS::AccountId}:function:${pEnvironmentPrefix}*'
+
+          # Shared networking is left in place
+          - Sid: DenyNetworkDestruction
+            Effect: Deny
+            Action:
+              - ec2:DeleteVpc
+              - ec2:DeleteSubnet
+              - ec2:DeleteInternetGateway
+              - ec2:DeleteNatGateway
+              - ec2:DeleteRouteTable
+              - ec2:DeleteVpcEndpoints
+              - ec2:DeleteVpcPeeringConnection
+              - ec2:DeleteVpnConnection
+              - ec2:DeleteVpnGateway
+              - ec2:DeleteTransitGateway*
+            Resource: '*'
+
+  rSupportAccessRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Ref pRoleName
+      Path: /support-access/
+      Description: Guarded administrative access for Cirro support. Delete the CloudFormation stack to revoke.
+      PermissionsBoundary: !Ref rSupportPermissionsBoundary
+      ManagedPolicyArns:
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess'
+        - !Ref rSupportGuardrailsPolicy
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Fn::If:
+            - HasAccessExpiry
+            - Effect: Allow
+              Principal:
+                AWS:
+                  - !Sub 'arn:${AWS::Partition}:iam::${pDataPortalAccountId}:root'
+              Action:
+                - 'sts:AssumeRole'
+              Condition:
+                DateLessThan:
+                  aws:CurrentTime: !Ref pAccessExpiry
+            - Effect: Allow
+              Principal:
+                AWS:
+                  - !Sub 'arn:${AWS::Partition}:iam::${pDataPortalAccountId}:root'
+              Action:
+                - 'sts:AssumeRole'
+
+Outputs:
+  SupportAccessRoleArn:
+    Description: ARN of the support access role. Share this with Cirro support.
+    Value: !GetAtt rSupportAccessRole.Arn
+  TemplateVersion:
+    Description: Version of the support access role template
+    Value: !FindInMap [TemplateInfo, Version, Value]
