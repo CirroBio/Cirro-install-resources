@@ -58,7 +58,8 @@ You can also manually launch the CloudFormation Create stack wizard through the 
 
 [`cirro_support_access_role.yml`](cirro_support_access_role.yml) deploys a role that Cirro support can assume to help debug or set up the account.
 Deploy it as a stack in the account, entering your Cirro tenant account ID for `pDataPortalAccountId`, and share the `SupportAccessRoleArn` output with Cirro support.
-Access is delegated to the tenant account, which controls who in Cirro support can assume the role.
+Only Cirro support staff signed in through the tenant account's support single sign-on role can assume it.
+To limit access to specific people, enter their user names in `pSupportUsers` (e.g. `su-jdoe@cirro.bio`).
 Set `pAccessExpiry` to make the access expire automatically, or delete the stack to revoke it.
 
 The role has administrative access to the services Cirro uses, with guardrails:

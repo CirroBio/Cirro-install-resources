@@ -18,6 +18,14 @@ Parameters:
     Type: String
     AllowedPattern: '^$|^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}Z)?$'
     ConstraintDescription: Must be blank or a UTC date such as 2027-01-31 or 2027-01-31T17:00:00Z.
+  pSupportUsers:
+    Description: >-
+      (Optional) Comma separated user names of the Cirro support staff allowed to assume this role,
+      without spaces, e.g. su-jdoe@cirro.bio,su-asmith@cirro.bio. Leave as * to allow any Cirro support user.
+    Default: '*'
+    Type: CommaDelimitedList
+    AllowedPattern: '^[\w+=.@*-]+$'
+    ConstraintDescription: Must be user names separated by commas, without spaces.
   pRoleName:
     Description: '(Advanced) Support access role name.'
     Default: 'Cirro-SupportAccessRole'
@@ -329,23 +337,25 @@ Resources:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
-          Fn::If:
-            - HasAccessExpiry
-            - Effect: Allow
-              Principal:
-                AWS:
-                  - !Sub 'arn:${AWS::Partition}:iam::${pDataPortalAccountId}:root'
-              Action:
-                - 'sts:AssumeRole'
-              Condition:
-                DateLessThan:
-                  aws:CurrentTime: !Ref pAccessExpiry
-            - Effect: Allow
-              Principal:
-                AWS:
-                  - !Sub 'arn:${AWS::Partition}:iam::${pDataPortalAccountId}:root'
-              Action:
-                - 'sts:AssumeRole'
+          - Effect: Allow
+            Principal:
+              AWS:
+                - !Sub 'arn:${AWS::Partition}:iam::${pDataPortalAccountId}:root'
+            Action:
+              - 'sts:AssumeRole'
+            Condition:
+              # Only sessions of the Cirro support single sign-on role in the tenant account
+              ArnLike:
+                aws:PrincipalArn: !Sub 'arn:${AWS::Partition}:iam::${pDataPortalAccountId}:role/aws-reserved/sso.amazonaws.com/*'
+              # Only the named support users. The single sign-on session name is the user name,
+              # so aws:userid is '<role id>:<user name>'. This builds one '*:<user name>' pattern per user.
+              StringLike:
+                aws:userid: !Split [',', !Join ['', ['*:', !Join [',*:', !Ref pSupportUsers]]]]
+              DateLessThan:
+                Fn::If:
+                  - HasAccessExpiry
+                  - aws:CurrentTime: !Ref pAccessExpiry
+                  - !Ref AWS::NoValue
 
 Outputs:
   SupportAccessRoleArn:
