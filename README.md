@@ -70,6 +70,8 @@ The role has administrative access to the services Cirro uses, with guardrails:
 - No deleting S3 objects, table buckets, file systems or KMS keys, and no deleting shared networking.
 - No public ACLs, snapshot/image sharing, or reading secrets and parameters that do not belong to Cirro.
 - IAM changes are limited to Cirro roles and policies, which stay capped by the Cirro permissions boundary. It cannot create users or access keys, assume other roles, or change itself.
+- By default it cannot edit the Cirro permissions boundary, so it cannot deploy or update the project deployment role stack.
+  Set `pAllowDeploymentRoleChanges` to `true` to let support deploy and update that stack. This lets support change what the boundary allows, so Cirro roles are no longer capped by it.
 
 #### S3 Mirror
 

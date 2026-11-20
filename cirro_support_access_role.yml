@@ -26,6 +26,16 @@ Parameters:
     Type: CommaDelimitedList
     AllowedPattern: '^[\w+=.@*-]+$'
     ConstraintDescription: Must be user names separated by commas, without spaces.
+  pAllowDeploymentRoleChanges:
+    Description: >-
+      (Optional) Set to true to let Cirro support deploy and update the Cirro project deployment role stack,
+      which edits the Cirro permissions boundary that caps every Cirro role. Leave as false to keep the boundary
+      read-only to support.
+    Default: 'false'
+    Type: String
+    AllowedValues:
+      - 'false'
+      - 'true'
   pRoleName:
     Description: '(Advanced) Support access role name.'
     Default: 'Cirro-SupportAccessRole'
@@ -54,6 +64,10 @@ Conditions:
       - Fn::Equals:
           - !Ref pAccessExpiry
           - ''
+  DenyDeploymentRoleChanges:
+    Fn::Equals:
+      - !Ref pAllowDeploymentRoleChanges
+      - 'false'
 Resources:
   # The role and its policies live under the /support-access/ IAM path so that their ARNs
   # never match the '${pEnvironmentPrefix}*' patterns that Cirro roles are allowed to manage.
@@ -160,15 +174,18 @@ Resources:
               - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:instance-profile/${pEnvironmentPrefix}*'
               - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/*'
 
-          # The Cirro permissions boundary caps every Cirro role, so it cannot be edited from here.
-          # Update it by updating the project deployment role stack instead.
-          - Sid: DenyCirroPermissionsBoundaryChanges
-            Effect: Deny
-            NotAction:
-              - iam:Get*
-              - iam:List*
-            Resource:
-              - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/${pCirroPermissionsBoundaryName}'
+          # The Cirro permissions boundary caps every Cirro role, so it cannot be edited from here, including through
+          # the project deployment role stack, unless the account owner sets pAllowDeploymentRoleChanges to true.
+          - Fn::If:
+              - DenyDeploymentRoleChanges
+              - Sid: DenyCirroPermissionsBoundaryChanges
+                Effect: Deny
+                NotAction:
+                  - iam:Get*
+                  - iam:List*
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/${pCirroPermissionsBoundaryName}'
+              - !Ref AWS::NoValue
 
           # Roles can only be created or have their permissions changed while capped by the Cirro permissions boundary
           - Sid: EnforceCirroPermissionsBoundary
@@ -307,6 +324,7 @@ Resources:
               - lambda:CreateFunctionUrlConfig
             NotResource:
               - !Sub 'arn:${AWS::Partition}:lambda:*:${AWS::AccountId}:function:${pEnvironmentPrefix}*'
+
 
           # Shared networking is left in place
           - Sid: DenyNetworkDestruction
