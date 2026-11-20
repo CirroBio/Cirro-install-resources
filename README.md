@@ -54,9 +54,29 @@ In the Create Project interface, select **I want to use my own AWS account** and
 
 You can also manually launch the CloudFormation Create stack wizard through the AWS Console. Use the S3 mirror when providing the template source.
 
+#### Support access role (Optional)
+
+[`cirro_support_access_role.yml`](cirro_support_access_role.yml) deploys a role that Cirro support can assume to help debug or set up the account.
+Deploy it as a stack in the account, entering your Cirro tenant account ID for `pDataPortalAccountId`, and share the `SupportAccessRoleArn` output with Cirro support.
+Only Cirro support staff signed in through the tenant account's support single sign-on role can assume it.
+To limit access to specific people, enter their user names in `pSupportUsers` (e.g. `su-jdoe@cirro.bio`).
+Set `pAccessExpiry` to make the access expire automatically, or delete the stack to revoke it.
+
+The role has administrative access to the services Cirro uses, with guardrails:
+
+- No access to other services, billing, organization or account settings.
+- No launching compute: instances, fleets, Auto Scaling groups, Batch jobs, ECS tasks and services, HealthOmics runs. SageMaker is view, stop and delete only.
+- No purchases or commitments (reservations, capacity, hosts) and no service quota increases.
+- No deleting S3 objects, table buckets, file systems or KMS keys, and no deleting shared networking.
+- No public ACLs, snapshot/image sharing, or reading secrets and parameters that do not belong to Cirro.
+- IAM changes are limited to Cirro roles and policies, which stay capped by the Cirro permissions boundary. It cannot create users or access keys, assume other roles, or change itself.
+- By default it cannot edit the Cirro permissions boundary, so it cannot deploy or update the project deployment role stack.
+  Set `pAllowDeploymentRoleChanges` to `true` to let support deploy and update that stack. This lets support change what the boundary allows, so Cirro roles are no longer capped by it.
+
 #### S3 Mirror
 
-https://cirro-marketplace-assets.s3.us-west-2.amazonaws.com/cirro_project_deployment_role.yml
+- Project deployment role: https://cirro-marketplace-assets.s3.us-west-2.amazonaws.com/cirro_project_deployment_role.yml
+- Support access role: https://cirro-marketplace-assets.s3.us-west-2.amazonaws.com/cirro_support_access_role.yml
 
 #### Updating the role
 
