@@ -21,6 +21,13 @@ Parameters:
     Description: '(Optional) Cirro username of the account owner. Only this user can create projects using this account.'
     Default: ''
     Type: String
+  pEnableAiServices:
+    Description: '(Optional) Allow Cirro AI in this account''s projects: Bedrock models, AgentCore gateways and the secrets AgentCore keeps for their sign-ins.'
+    Default: 'false'
+    Type: String
+    AllowedValues:
+      - 'true'
+      - 'false'
 Metadata:
   cfn-lint:
     config:
@@ -30,13 +37,17 @@ Metadata:
 Mappings:
   TemplateInfo:
     Version:
-      Value: '2026.11.12'
+      Value: '2026.11.20'
 Conditions:
   HasAccountOwner:
     Fn::Not:
       - Fn::Equals:
           - !Ref pAccountOwner
           - ''
+  EnableAiServices:
+    Fn::Equals:
+      - !Ref pEnableAiServices
+      - 'true'
 Resources:
   rProjectPermissionBoundary:
     Type: 'AWS::IAM::ManagedPolicy'
@@ -267,6 +278,49 @@ Resources:
               - secretsmanager:*
             Resource:
               - !Sub 'arn:${AWS::Partition}:secretsmanager:*:${AWS::AccountId}:secret:${pEnvironmentPrefix}/*'
+
+          # Allow AI in projects (pEnableAiServices): Bedrock models through each project's own inference profiles
+          - Fn::If:
+              - EnableAiServices
+              - Sid: PermissionsBoundaryBedrock
+                Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                  - bedrock:CreateInferenceProfile
+                  - bedrock:GetInferenceProfile
+                  - bedrock:ListInferenceProfiles
+                  - bedrock:TagResource
+                  - bedrock:GetFoundationModel
+                Resource: '*'
+              - !Ref AWS::NoValue
+
+          # Allow AI in projects (pEnableAiServices): each project's AgentCore gateway for MCP tools, and its sign-ins
+          - Fn::If:
+              - EnableAiServices
+              - Sid: PermissionsBoundaryAgentCore
+                Effect: Allow
+                Action:
+                  - bedrock-agentcore:*
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:bedrock-agentcore:*:${AWS::AccountId}:*'
+              - !Ref AWS::NoValue
+
+          # The secrets AgentCore keeps for MCP sign-ins, in its own name (pEnableAiServices)
+          - Fn::If:
+              - EnableAiServices
+              - Sid: PermissionsBoundaryAgentCoreSecrets
+                Effect: Allow
+                Action:
+                  - secretsmanager:CreateSecret
+                  - secretsmanager:PutSecretValue
+                  - secretsmanager:DescribeSecret
+                  - secretsmanager:GetSecretValue
+                  - secretsmanager:DeleteSecret
+                  - secretsmanager:TagResource
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:secretsmanager:*:${AWS::AccountId}:secret:bedrock-agentcore-identity!*'
+              - !Ref AWS::NoValue
 
           # Allow various metrics access, billing/storage
           - Sid: PermissionsBoundaryMetrics
